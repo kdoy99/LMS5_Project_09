@@ -37,7 +37,7 @@
         </Grid>
 
         <Grid Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <TextBox x:Name="idBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
+            <TextBox x:Name="idBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="1">
@@ -45,7 +45,7 @@
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <PasswordBox x:Name="passwordBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
+            <PasswordBox x:Name="passwordBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
         </Grid>
 
         <Grid Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2">

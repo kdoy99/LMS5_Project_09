@@ -35,7 +35,7 @@
         </Grid>
 
         <Grid Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <TextBox x:Name="new_idBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H" TextChanged="new_idBox_TextChanged"/>
+            <TextBox x:Name="new_idBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H" TextChanged="new_idBox_TextChanged"/>
         </Grid>
 
         <Grid Grid.Row="1" Grid.Column="5" Margin="10,10,10,10">
@@ -47,7 +47,7 @@
         </Grid>
 
         <Grid Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <PasswordBox x:Name="new_passwordBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
+            <PasswordBox x:Name="new_passwordBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="1">
@@ -55,7 +55,7 @@
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <TextBox x:Name="new_nameBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
+            <TextBox x:Name="new_nameBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H"/>
         </Grid>
 
         <Grid Grid.Row="7" Grid.Column="1">
@@ -63,7 +63,7 @@
         </Grid>
 
         <Grid Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="3" Margin="10,10,10,10">
-            <TextBox x:Name="new_contactBox" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H" PreviewTextInput="new_contactBox_PreviewTextInput" TextChanged="new_contactBox_TextChanged"/>
+            <TextBox x:Name="new_contactBox" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" FontFamily="Hancom Hoonminjeongeum_H" PreviewTextInput="new_contactBox_PreviewTextInput" TextChanged="new_contactBox_TextChanged"/>
         </Grid>
 
         <Grid Grid.Row="7" Grid.Column="5" Margin="10,10,10,10">
