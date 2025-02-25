@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Project09"
         mc:Ignorable="d"
         Title="newAccount" Height="400" Width="520">
-    <Grid Background="#FFFF00">
+    <Grid Background="#F7E600">
         <Grid.RowDefinitions>
             <RowDefinition Height="30" />
             <RowDefinition Height="50" />
