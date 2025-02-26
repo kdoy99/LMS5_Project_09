@@ -20,6 +20,6 @@ public partial class App : Application
     // 현재 프로젝트 경로 가져오기
     static string projectPath = "../../../";
     // 생성될 DB 경로(현재 프로젝트 경로 + 파일이름) 지정
-    public static string databasePath = System.IO.Path.Combine(projectPath, accountDB);
+    public static string databasePath = System.IO.Path.Combine(projectPath, accountDB);    
 }
 

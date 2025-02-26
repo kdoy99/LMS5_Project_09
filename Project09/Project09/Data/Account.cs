@@ -7,7 +7,7 @@ using SQLite;
 
 namespace Project09.Data
 {
-    class Account
+    public class Account
     {
         [PrimaryKey, AutoIncrement]
         public int UserNumber { get; set; }

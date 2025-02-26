@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +15,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using Newtonsoft.Json;
+using Project09.Data;
+
+
+
 namespace Project09
 {
     /// <summary>
@@ -19,9 +27,131 @@ namespace Project09
     /// </summary>
     public partial class ChatRoom : Window
     {
-        public ChatRoom()
+        // 클라이언트 소켓
+        Socket ClientSocket;
+
+        // 로그인 한 유저 정보
+        public Account user;
+
+        // 입력한 채팅 담을 리스트
+        private ObservableCollection<string> messageList = new ObservableCollection<string>();
+
+        // IP, port 값
+        private string IP = "127.0.0.1";
+        private int port = 10000;        
+
+        public ChatRoom(Account account)
         {
             InitializeComponent();
+            user = account;
+            messageListView.ItemsSource = messageList;            
+        }
+
+        private void chatWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var endPoint = new IPEndPoint(IPAddress.Parse(IP), port);
+            var args = new SocketAsyncEventArgs();
+            args.RemoteEndPoint = endPoint;
+            args.Completed += ServerConnected;
+            ClientSocket.ConnectAsync(args);
+        }
+
+        private void ServerConnected(object sender, SocketAsyncEventArgs e)
+        {
+            if (e.SocketError == SocketError.Success)
+            {
+                // 서버 연결 성공시 제어 요청 받기
+                ReceiveControl();
+            }
+        }
+
+        private void ReceiveControl()
+        {
+            var args = new SocketAsyncEventArgs();
+            args.SetBuffer(new byte[1024], 0, 1024);
+            args.Completed += ControlReceived;
+            ClientSocket.ReceiveAsync(args);
+        }
+
+        private void ControlReceived(object sender, SocketAsyncEventArgs e)
+        {
+            if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
+            {
+                // 서버에서 받은 JSON 데이터를 문자열로 변환
+                string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
+                var receivedData = JsonConvert.DeserializeObject<Chat_Client>(json);
+
+                // UI 스레드에서 채팅 리스트에 추가
+                Dispatcher.Invoke(() =>
+                {
+                    messageList.Add($"{receivedData.Message}");
+                });
+
+                // 다시 서버로부터 메시지를 받을 수 있도록 설정
+                ReceiveControl();
+            }
+        }
+
+        private void SendChatInfo()
+        {
+            if (ClientSocket == null || !ClientSocket.Connected)
+                return;
+
+            try
+            {
+                // 1. 전송할 데이터 엔터티 객체에 준비
+                var info = new Chat_Client
+                {
+                    Message = $"{user.Name} : {chatBox.Text}"
+                };
+
+                // 2. 객체를 json 문자열로 직렬화
+                string json = JsonConvert.SerializeObject(info);
+
+                // 3. 문자열 byte 배열로 변환
+                byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+
+                // 4. SocketAsyncEventArgs 객체에 전송할 데이터 설정
+                var args = new SocketAsyncEventArgs();
+                args.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+
+                // 5. 비동기적으로 전송
+                ClientSocket.SendAsync(args);
+
+                // 6. 입력창 비우기
+                Dispatcher.Invoke(() =>
+                {
+                    chatBox.Clear();
+                });
+            }
+            catch { }
+        }
+
+        private void sendButton_Click(object sender, RoutedEventArgs e)
+        {
+            SendChatInfo();
+        }
+
+        private void chatBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (string.IsNullOrEmpty(chatBox.Text))
+                    return;
+                string message = chatBox.Text;
+                
+                messageList.Add($"{user.Name} : {message}");
+                chatBox.Clear();
+
+                if (VisualTreeHelper.GetChildrenCount(messageListView) > 0)
+                {
+                    Border border = (Border)VisualTreeHelper.GetChild(messageListView, 0);
+                    ScrollViewer scrollViewer = (ScrollViewer)VisualTreeHelper.GetChild(border, 0);
+                    scrollViewer.ScrollToBottom();
+                }
+
+            }
         }
     }
 }
