@@ -70,8 +70,8 @@ namespace Project09
         {
             var args = new SocketAsyncEventArgs();
             args.SetBuffer(new byte[1024], 0, 1024);
-            args.Completed += ControlReceived;
-            ClientSocket.ReceiveAsync(args);
+            ClientSocket.ReceiveAsync(args); // 서버로부터 데이터 다시 받아오기
+            args.Completed += ControlReceived;            
         }
 
         private void ControlReceived(object sender, SocketAsyncEventArgs e)
@@ -117,40 +117,47 @@ namespace Project09
                 args.SetBuffer(bytesToSend, 0, bytesToSend.Length);
 
                 // 5. 비동기적으로 전송
-                ClientSocket.SendAsync(args);
-
-                // 6. 입력창 비우기
-                Dispatcher.Invoke(() =>
-                {
-                    chatBox.Clear();
-                });
+                ClientSocket.SendAsync(args);                
             }
             catch { }
         }
 
+        
+
         private void sendButton_Click(object sender, RoutedEventArgs e)
         {
+            string message = chatBox.Text;
+            sendMessage(message);
+        }
+
+        private void sendMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            // 메시지 서버로 전송
             SendChatInfo();
+
+            // 입력창 비우기
+            Dispatcher.Invoke(() =>
+            {
+                chatBox.Clear();
+            });
+
+            if (VisualTreeHelper.GetChildrenCount(messageListView) > 0)
+            {
+                Border border = (Border)VisualTreeHelper.GetChild(messageListView, 0);
+                ScrollViewer scrollViewer = (ScrollViewer)VisualTreeHelper.GetChild(border, 0);
+                scrollViewer.ScrollToBottom();
+            }
         }
 
         private void chatBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
-            {
-                if (string.IsNullOrEmpty(chatBox.Text))
-                    return;
+            {                                
                 string message = chatBox.Text;
-                
-                messageList.Add($"{user.Name} : {message}");
-                chatBox.Clear();
-
-                if (VisualTreeHelper.GetChildrenCount(messageListView) > 0)
-                {
-                    Border border = (Border)VisualTreeHelper.GetChild(messageListView, 0);
-                    ScrollViewer scrollViewer = (ScrollViewer)VisualTreeHelper.GetChild(border, 0);
-                    scrollViewer.ScrollToBottom();
-                }
-
+                sendMessage(message);
             }
         }
     }
