@@ -16,6 +16,8 @@ using Newtonsoft.Json;
 using SQLite;
 using System.Collections;
 using System;
+using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 
 namespace Server;
 
@@ -25,13 +27,17 @@ namespace Server;
 public partial class MainWindow : Window
 {
     Socket ServerSocket; // 서버 소켓, 하나
-    List<Socket> ClientSockets = new List<Socket>(); // 클라이언트 소켓, 리스트    
+    List<Socket> ClientSockets = new List<Socket>(); // 클라이언트 소켓, 리스트
+    Dictionary<Socket, Account> userInfo = new Dictionary<Socket, Account>(); // 각 소켓별 접속한 유저 정보 딕셔너리
+
+    private ObservableCollection<string> onlineUserList = new ObservableCollection<string>(); // 온라인 유저 정보 리스트
 
     object lockObject = new object(); // 멀티스레드 동기화용
 
     public MainWindow()
     {
         InitializeComponent();
+        OnlineList.ItemsSource = onlineUserList; // 접속중인 유저 리스트
     }
 
     private void openServerButton_Click(object sender, RoutedEventArgs e)
@@ -42,6 +48,13 @@ public partial class MainWindow : Window
         ServerSocket.Listen(10);
         AcceptClient();
     }
+
+    private void closeServerButton_Click(object sender, RoutedEventArgs e)
+    {        
+        AddLog("서버 종료");
+        ServerSocket.Close();
+    }
+
 
     private void AcceptClient()
     {
@@ -62,12 +75,12 @@ public partial class MainWindow : Window
     private void ClientAccepted(object sender, SocketAsyncEventArgs e)
     {        
         // 전역변수로 선언하지 않음 -> 비동기로 각자 굴릴 것이기 때문에 변수 따로 필요
-        Socket ClientSocket = e.AcceptSocket;
+        Socket ClientSocket = e.AcceptSocket;        
 
         // 소켓 리스트 데이터 보호 (비동기에서는 필수적)
         lock (lockObject)
         {
-            ClientSockets.Add(ClientSocket); // 리스트에 추가
+            ClientSockets.Add(ClientSocket); // 리스트에 추가            
         }
 
         // 클라이언트와 연결 완료
@@ -100,23 +113,47 @@ public partial class MainWindow : Window
             // 2. Json 문자열을 객체로 역직렬화
             try
             {
-                var userChat = JsonConvert.DeserializeObject<Chat>(json);
-
-                AddLog($"전체 채팅 : {userChat.Message}");     
-
-                // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
-                HandlingMessage(json);
-
-
-                // 4. 채팅 데이터베이스에 저장
-                using (SQLiteConnection connection = new SQLiteConnection(App.databasePath))
+                // 예외) 클라이언트가 연결될 때 계정 정보 받아오는 부분
+                if (userInfo.ContainsKey(ClientSocket) == false)
                 {
-                    // Chat 클래스 정의 기반으로 테이블 생성
-                    connection.CreateTable<Chat>();
+                    // 클라이언트에서 가져온 계정 정보를 지역 변수에 담기
+                    var account = JsonConvert.DeserializeObject<Account>(json);
 
-                    // UI 컨트롤에 입력된 데이터를 chat 객체 형태로 테이블에 삽입
-                    connection.Insert(userChat);
+                    // lock 이용해서 딕셔너리에 가져온 계정 정보 추가
+                    lock (lockObject)
+                    {
+                        userInfo.Add(ClientSocket, account);
+                    }
+
+                    // 추가했다는 것은, 입장과 똑같기 때문에 log로 남김
+                    AddLog($"{account.Name} 님 입장");
+
+                    // 온라인 유저 리스트에 담기
+                    Dispatcher.Invoke(() =>
+                    {
+                        onlineUserList.Add($"{account.Name}");
+                    });
                 }
+                else
+                {
+                    var userChat = JsonConvert.DeserializeObject<Chat>(json);
+
+                    AddLog($"전체 채팅 : {userChat.Message}");
+
+                    // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
+                    HandlingMessage(json);
+
+
+                    // 4. 채팅 데이터베이스에 저장
+                    using (SQLiteConnection connection = new SQLiteConnection(App.databasePath))
+                    {
+                        // Chat 클래스 정의 기반으로 테이블 생성
+                        connection.CreateTable<Chat>();
+
+                        // UI 컨트롤에 입력된 데이터를 chat 객체 형태로 테이블에 삽입
+                        connection.Insert(userChat);
+                    }
+                }                    
             }
             catch (Exception ex) 
             {
@@ -128,33 +165,47 @@ public partial class MainWindow : Window
         }
         else
         {
-            lock (lockObject)
+            if (userInfo.ContainsKey(ClientSocket))
             {
-                ClientSockets.Remove(ClientSocket);
-            }
-            // 누가 연결 종료했는지 알 수 있도록 추가하기
-            AddLog($"연결 종료됨");
-            ClientSocket.Close();
-        }
+                // 누가 연결 종료했는지
+                AddLog($"{userInfo[ClientSocket].Name} 연결 종료됨");
 
+                Dispatcher.Invoke(() =>
+                {
+                    onlineUserList.Remove(userInfo[ClientSocket].Name);
+                });
+
+                lock (lockObject)
+                {
+                    ClientSockets.Remove(ClientSocket);                    
+                    userInfo.Remove(ClientSocket);
+                }                
+                ClientSocket.Close();
+            }            
+        }
     }
 
-    private void HandlingMessage(string json)
+    private void HandlingMessage(string json) // 메시지 다루는 메소드
     {
         lock (lockObject)
         {
-            foreach (var socket in ClientSockets)
+            foreach (var socket in ClientSockets) // foreach 반복문으로 소켓들 준비
             {
                 try
                 {
+                    // 소켓 모두에 메시지 보냄
                     byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                     socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
 
                 }
-                catch
+                catch // 메시지 안 보내지면 문제 발생한 걸로 간주하고 소켓 닫음
                 {
-                    ClientSockets.Remove(socket);
-                    socket.Close();
+                    lock (lockObject) // 여기도 lock 사용해서 안전하게 제거
+                    {
+                        ClientSockets.Remove(socket); // 소켓 리스트에서 제거
+                        userInfo.Remove(socket); // 딕셔너리에서 해당 소켓과 관련된 유저 정보 제거
+                    }                    
+                    socket.Close(); // 마지막으로, 소켓 닫기
                 }
             }
         }               
@@ -169,4 +220,6 @@ public partial class MainWindow : Window
             LogBox.ScrollToEnd();
         });
     }
+
+    
 }

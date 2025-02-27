@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -60,7 +61,13 @@ namespace Project09
         private void ServerConnected(object sender, SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
-            {
+            {                
+                string json = JsonConvert.SerializeObject(user);
+                byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                var args = new SocketAsyncEventArgs();
+                args.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+                ClientSocket.SendAsync(args);
+
                 // 서버 연결 성공시 제어 요청 받기
                 ReceiveControl();
             }
@@ -76,21 +83,29 @@ namespace Project09
 
         private void ControlReceived(object sender, SocketAsyncEventArgs e)
         {
-            if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
+            try
             {
-                // 서버에서 받은 JSON 데이터를 문자열로 변환
-                string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
-                var receivedData = JsonConvert.DeserializeObject<Chat_Client>(json);
-
-                // UI 스레드에서 채팅 리스트에 추가
-                Dispatcher.Invoke(() =>
+                if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
                 {
-                    messageList.Add($"{receivedData.Message}");
-                });
+                    // 서버에서 받은 JSON 데이터를 문자열로 변환
+                    string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
+                    var receivedData = JsonConvert.DeserializeObject<Chat_Client>(json);
 
-                // 다시 서버로부터 메시지를 받을 수 있도록 설정
-                ReceiveControl();
+                    // UI 스레드에서 채팅 리스트에 추가
+                    Dispatcher.Invoke(() =>
+                    {
+                        messageList.Add($"{receivedData.Message}");
+                    });
+
+                    // 다시 서버로부터 메시지를 받을 수 있도록 설정
+                    ReceiveControl();
+                }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"메시지 수신 중 오류 발생: {ex.Message}");
+            }
+            
         }
 
         private void SendChatInfo()
@@ -119,7 +134,10 @@ namespace Project09
                 // 5. 비동기적으로 전송
                 ClientSocket.SendAsync(args);                
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"메시지 전송 중 오류 발생: {ex.Message}");
+            }
         }
 
         

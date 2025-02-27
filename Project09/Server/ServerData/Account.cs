@@ -5,11 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using SQLite;
 
-namespace Project09.Data
+namespace Server.ServerData
 {
-    public class Account
-    {
-        [PrimaryKey, AutoIncrement]
+    class Account
+    {        
         public int UserNumber { get; set; }
         public string ID { get; set; } // 아이디
         public string Password { get; set; } // 비밀번호

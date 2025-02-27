@@ -82,7 +82,7 @@
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="5" Grid.ColumnSpan="2" Margin="10,10,10,10">
-            <Button x:Name="closeServerButton" Content="서버 종료" FontSize="36" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" Background="#FFCE55"/>
+            <Button x:Name="closeServerButton" Content="서버 종료" FontSize="36" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" Background="#FFCE55" Click="closeServerButton_Click"/>
         </Grid>
     </Grid>
 </Window>
