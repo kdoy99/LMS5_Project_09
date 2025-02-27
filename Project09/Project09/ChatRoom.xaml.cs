@@ -39,13 +39,13 @@ namespace Project09
 
         // IP, port 값
         private string IP = "127.0.0.1";
-        private int port = 10000;        
+        private int port = 10000;
 
         public ChatRoom(Account account)
         {
             InitializeComponent();
             user = account;
-            messageListView.ItemsSource = messageList;            
+            messageListView.ItemsSource = messageList;
         }
 
         private void chatWindow_Loaded(object sender, RoutedEventArgs e)
@@ -61,7 +61,7 @@ namespace Project09
         private void ServerConnected(object sender, SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
-            {                
+            {
                 string json = JsonConvert.SerializeObject(user);
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                 var args = new SocketAsyncEventArgs();
@@ -78,7 +78,7 @@ namespace Project09
             var args = new SocketAsyncEventArgs();
             args.SetBuffer(new byte[1024], 0, 1024);
             ClientSocket.ReceiveAsync(args); // 서버로부터 데이터 다시 받아오기
-            args.Completed += ControlReceived;            
+            args.Completed += ControlReceived;
         }
 
         private void ControlReceived(object sender, SocketAsyncEventArgs e)
@@ -105,7 +105,7 @@ namespace Project09
             {
                 MessageBox.Show($"메시지 수신 중 오류 발생: {ex.Message}");
             }
-            
+
         }
 
         private void SendChatInfo()
@@ -132,7 +132,7 @@ namespace Project09
                 args.SetBuffer(bytesToSend, 0, bytesToSend.Length);
 
                 // 5. 비동기적으로 전송
-                ClientSocket.SendAsync(args);                
+                ClientSocket.SendAsync(args);
             }
             catch (Exception ex)
             {
@@ -140,7 +140,7 @@ namespace Project09
             }
         }
 
-        
+
 
         private void sendButton_Click(object sender, RoutedEventArgs e)
         {
@@ -173,7 +173,7 @@ namespace Project09
         private void chatBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
-            {                                
+            {
                 string message = chatBox.Text;
                 sendMessage(message);
             }

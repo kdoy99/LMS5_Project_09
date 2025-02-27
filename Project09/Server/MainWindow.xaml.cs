@@ -50,7 +50,7 @@ public partial class MainWindow : Window
     }
 
     private void closeServerButton_Click(object sender, RoutedEventArgs e)
-    {        
+    {
         AddLog("서버 종료");
         ServerSocket.Close();
     }
@@ -69,13 +69,13 @@ public partial class MainWindow : Window
         {
             MessageBox.Show($"AcceptClient 메소드 오류 : {ex.Message}");
         }
-        
+
     }
 
     private void ClientAccepted(object sender, SocketAsyncEventArgs e)
-    {        
+    {
         // 전역변수로 선언하지 않음 -> 비동기로 각자 굴릴 것이기 때문에 변수 따로 필요
-        Socket ClientSocket = e.AcceptSocket;        
+        Socket ClientSocket = e.AcceptSocket;
 
         // 소켓 리스트 데이터 보호 (비동기에서는 필수적)
         lock (lockObject)
@@ -92,7 +92,7 @@ public partial class MainWindow : Window
     }
 
     private void ReceiveInfo(Socket ClientSocket) // 매개변수에 접속한 클라이언트 받아옴
-    {        
+    {
         var args = new SocketAsyncEventArgs();
         args.SetBuffer(new byte[1024], 0, 1024);
         args.UserToken = ClientSocket; // 어떤 클라이언트인지 알아내기
@@ -153,9 +153,9 @@ public partial class MainWindow : Window
                         // UI 컨트롤에 입력된 데이터를 chat 객체 형태로 테이블에 삽입
                         connection.Insert(userChat);
                     }
-                }                    
+                }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 MessageBox.Show($"DataReceived 메소드에서 오류 발생! : {ex.Message}");
             }
@@ -177,11 +177,11 @@ public partial class MainWindow : Window
 
                 lock (lockObject)
                 {
-                    ClientSockets.Remove(ClientSocket);                    
+                    ClientSockets.Remove(ClientSocket);
                     userInfo.Remove(ClientSocket);
-                }                
+                }
                 ClientSocket.Close();
-            }            
+            }
         }
     }
 
@@ -204,11 +204,11 @@ public partial class MainWindow : Window
                     {
                         ClientSockets.Remove(socket); // 소켓 리스트에서 제거
                         userInfo.Remove(socket); // 딕셔너리에서 해당 소켓과 관련된 유저 정보 제거
-                    }                    
+                    }
                     socket.Close(); // 마지막으로, 소켓 닫기
                 }
             }
-        }               
+        }
     }
 
     private void AddLog(string log)
@@ -221,5 +221,5 @@ public partial class MainWindow : Window
         });
     }
 
-    
+
 }
