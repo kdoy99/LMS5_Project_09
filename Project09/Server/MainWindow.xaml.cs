@@ -34,6 +34,9 @@ public partial class MainWindow : Window
 
     object lockObject = new object(); // 멀티스레드 동기화용
 
+    // 채팅방 목록
+
+
     public MainWindow()
     {
         InitializeComponent();
@@ -46,6 +49,7 @@ public partial class MainWindow : Window
         var endPoint = new IPEndPoint(IPAddress.Any, Convert.ToInt32(portBox.Text));
         ServerSocket.Bind(endPoint);
         ServerSocket.Listen(10);
+        AddLog("서비스 시작");
         AcceptClient();
     }
 
@@ -62,8 +66,7 @@ public partial class MainWindow : Window
         {
             var args = new SocketAsyncEventArgs();
             args.Completed += ClientAccepted;
-            ServerSocket.AcceptAsync(args);
-            AddLog("서비스 시작");
+            ServerSocket.AcceptAsync(args);            
         }
         catch (Exception ex)
         {
@@ -84,7 +87,7 @@ public partial class MainWindow : Window
         }
 
         // 클라이언트와 연결 완료
-        AddLog("클라이언트 연결");
+        AddLog($"클라이언트 연결 완료! ID : {userInfo[ClientSocket].ID}");
 
         // 클라이언트를 상대하기 위해서 동적으로 생성된 소켓을 멤버변수에 저장
         ReceiveInfo(ClientSocket);
@@ -133,15 +136,31 @@ public partial class MainWindow : Window
                     {
                         onlineUserList.Add($"{account.Name}");
                     });
+
+                    foreach (var socket in ClientSockets)
+                    {
+                        // 지역 변수에 클래스 파일 불러서 담아주기
+                        var messageObject = new Chat
+                        {
+                            Message = $"{0},{1},{account.Name},{account.Name} 님 입장"
+                        };
+                        // 다시 json 변환
+                        string jsonUserList = JsonConvert.SerializeObject(messageObject);
+                        // byte 변환
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
+                        // 모든 클라이언트에 전송
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    
                 }
                 else
                 {
                     var userChat = JsonConvert.DeserializeObject<Chat>(json);
 
-                    AddLog($"전체 채팅 : {userChat.Message}");
+                    AddLog($"{userChat.Message}");
 
                     // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
-                    HandlingMessage(json);
+                    HandlingMessage(json, userChat);
 
 
                     // 4. 채팅 데이터베이스에 저장
@@ -163,40 +182,83 @@ public partial class MainWindow : Window
             // 4. 다시 수신 작업 수행
             ReceiveInfo(ClientSocket);
         }
-        else
+        else // 유저 접속 종료
         {
             if (userInfo.ContainsKey(ClientSocket))
             {
                 // 누가 연결 종료했는지
                 AddLog($"{userInfo[ClientSocket].Name} 연결 종료됨");
 
+                foreach (var socket in ClientSockets)
+                {
+                    // 지역 변수에 클래스 파일 불러서 담아주기
+                    var messageObject = new Chat
+                    {
+                        Message = $"{0},{2},{userInfo[ClientSocket].Name},{userInfo[ClientSocket].Name} 님 퇴장"
+                    };
+                    // 다시 json 변환
+                    string jsonUserList = JsonConvert.SerializeObject(messageObject);
+                    // byte 변환
+                    byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
+                    socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                }
+
+                // 딕셔너리에서 밸류 제거
                 Dispatcher.Invoke(() =>
                 {
                     onlineUserList.Remove(userInfo[ClientSocket].Name);
                 });
-
+                
+                
                 lock (lockObject)
                 {
-                    ClientSockets.Remove(ClientSocket);
-                    userInfo.Remove(ClientSocket);
+                    ClientSockets.Remove(ClientSocket); // 소켓 리스트에서 소켓 제거
+                    userInfo.Remove(ClientSocket); // 딕셔너리에서 키 제거
                 }
                 ClientSocket.Close();
             }
         }
     }
 
-    private void HandlingMessage(string json) // 메시지 다루는 메소드
+    private void HandlingMessage(string json, Chat chat) // 메시지 다루는 메소드
     {
+        // 문자열 파싱
+        // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
+        // 예외) 0,1,?,? 은 접속한 유저 보내는 메시지임
+        string[] result = chat.Message.Split(",");
+
+        
+
         lock (lockObject)
         {
             foreach (var socket in ClientSockets) // foreach 반복문으로 소켓들 준비
             {
                 try
                 {
+                    if (result[0] == "0") // 전체 채팅
+                    {
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    else if (result[0] == "1")
+                    {
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    else if (result[0] == "2")
+                    {
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    else if (result[0] == "3")
+                    {
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    else { return; }
+                     
                     // 소켓 모두에 메시지 보냄
-                    byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-                    socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-
+                    
                 }
                 catch // 메시지 안 보내지면 문제 발생한 걸로 간주하고 소켓 닫음
                 {

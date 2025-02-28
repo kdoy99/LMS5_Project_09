@@ -37,15 +37,28 @@ namespace Project09
         // 입력한 채팅 담을 리스트
         private ObservableCollection<string> messageList = new ObservableCollection<string>();
 
+        // 온라인 유저 리스트
+        private ObservableCollection<string> onlineUserList = new ObservableCollection<string>();
+
         // IP, port 값
         private string IP = "127.0.0.1";
         private int port = 10000;
+
+
+        // 1. 방 종류, 2. 방 번호, 3. 보낸 사람, 4. 메시지
+        private int Room;
+        private int RoomNumber;
 
         public ChatRoom(Account account)
         {
             InitializeComponent();
             user = account;
             messageListView.ItemsSource = messageList;
+            onlineList.ItemsSource = onlineUserList;
+
+            // 메시지 형태 초기화
+            Room = 0;
+            RoomNumber = 0;
         }
 
         private void chatWindow_Loaded(object sender, RoutedEventArgs e)
@@ -62,6 +75,7 @@ namespace Project09
         {
             if (e.SocketError == SocketError.Success)
             {
+                // 접속한 유저 정보 보내기
                 string json = JsonConvert.SerializeObject(user);
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                 var args = new SocketAsyncEventArgs();
@@ -91,11 +105,40 @@ namespace Project09
                     string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
                     var receivedData = JsonConvert.DeserializeObject<Chat_Client>(json);
 
-                    // UI 스레드에서 채팅 리스트에 추가
-                    Dispatcher.Invoke(() =>
+                    // 문자열 파싱
+                    // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
+                    string[] result = receivedData.Message.Split(",");
+                    
+                    if (result[0] == "0")
                     {
-                        messageList.Add($"{receivedData.Message}");
-                    });
+                        if (result[1] == "0") // 채팅일 경우
+                        {
+                            // UI 스레드에서 채팅 리스트에 추가
+                            Dispatcher.Invoke(() =>
+                            {
+                                messageList.Add($"{result[2]} : {result[3]}");
+                            });
+                        }
+                        else if (result[1] == "1") // 접속한 유저 정보 보내는 것일 경우
+                        {
+                            // UI 스레드에서 온라인 유저 리스트에 추가
+                            Dispatcher.Invoke(() =>
+                            {
+                                onlineUserList.Add(result[2]);
+                                messageList.Add(result[3]);
+                            });
+                        }
+                        else if (result[1] == "2") 
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                onlineUserList.Remove(result[2]);
+                                messageList.Add(result[3]);
+                            });
+                        }
+                        
+                    }
+                    
 
                     // 다시 서버로부터 메시지를 받을 수 있도록 설정
                     ReceiveControl();
@@ -118,7 +161,7 @@ namespace Project09
                 // 1. 전송할 데이터 엔터티 객체에 준비
                 var info = new Chat_Client
                 {
-                    Message = $"{user.Name} : {chatBox.Text}"
+                    Message = $"{Room},{RoomNumber},{user.Name},{chatBox.Text}"
                 };
 
                 // 2. 객체를 json 문자열로 직렬화
