@@ -8,6 +8,9 @@ namespace Project09.Data
 {
     class Chat_Client
     {
+        public string Type { get; set; } // 무슨 종류 데이터를 보내는 건지 (온라인 유저, 메시지 등)
         public string Message { get; set; }
+
+        public List<string> Users { get; set; }
     }
 }

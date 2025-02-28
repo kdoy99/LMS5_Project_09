@@ -87,12 +87,13 @@ public partial class MainWindow : Window
         }
 
         // 클라이언트와 연결 완료
-        AddLog($"클라이언트 연결 완료! ID : {userInfo[ClientSocket].ID}");
+        AddLog($"클라이언트 연결 완료!");
+       
 
         // 클라이언트를 상대하기 위해서 동적으로 생성된 소켓을 멤버변수에 저장
         ReceiveInfo(ClientSocket);
         AcceptClient(); // 새 클라이언트 수집          
-    }
+    }        
 
     private void ReceiveInfo(Socket ClientSocket) // 매개변수에 접속한 클라이언트 받아옴
     {
@@ -136,22 +137,7 @@ public partial class MainWindow : Window
                     {
                         onlineUserList.Add($"{account.Name}");
                     });
-
-                    foreach (var socket in ClientSockets)
-                    {
-                        // 지역 변수에 클래스 파일 불러서 담아주기
-                        var messageObject = new Chat
-                        {
-                            Message = $"{0},{1},{account.Name},{account.Name} 님 입장"
-                        };
-                        // 다시 json 변환
-                        string jsonUserList = JsonConvert.SerializeObject(messageObject);
-                        // byte 변환
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
-                        // 모든 클라이언트에 전송
-                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-                    }
-                    
+                    SendOnlineUserList(ClientSocket);
                 }
                 else
                 {
@@ -190,14 +176,13 @@ public partial class MainWindow : Window
                 AddLog($"{userInfo[ClientSocket].Name} 연결 종료됨");
 
                 foreach (var socket in ClientSockets)
-                {
-                    // 지역 변수에 클래스 파일 불러서 담아주기
-                    var messageObject = new Chat
-                    {
-                        Message = $"{0},{2},{userInfo[ClientSocket].Name},{userInfo[ClientSocket].Name} 님 퇴장"
-                    };
+                {                    
                     // 다시 json 변환
-                    string jsonUserList = JsonConvert.SerializeObject(messageObject);
+                    string jsonUserList = JsonConvert.SerializeObject(new Chat
+                    {
+                        Type = "Message",
+                        Message = $"{0},{1},{userInfo[ClientSocket].Name},{userInfo[ClientSocket].Name}"
+                    });
                     // byte 변환
                     byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
                     socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
@@ -220,14 +205,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SendOnlineUserList(Socket clientSocket)
+    {
+        List<string> userList = userInfo.Values.Select(user => user.Name).ToList();
+
+        // 다시 json 변환
+        string jsonUserList = JsonConvert.SerializeObject(new Chat
+        {
+            Type = "UserList",
+            Users = userList
+        });
+        // byte 변환
+        byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
+        // 모든 클라이언트에 전송
+        foreach (var socket in ClientSockets)
+        {
+            socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+        }
+    }
+
     private void HandlingMessage(string json, Chat chat) // 메시지 다루는 메소드
     {
         // 문자열 파싱
         // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
         // 예외) 0,1,?,? 은 접속한 유저 보내는 메시지임
-        string[] result = chat.Message.Split(",");
-
-        
+        string[] result = chat.Message.Split(","); 
 
         lock (lockObject)
         {
@@ -237,7 +239,7 @@ public partial class MainWindow : Window
                 {
                     if (result[0] == "0") // 전체 채팅
                     {
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes($"{result[2]} : {result[3]}");
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
                     }
                     else if (result[0] == "1")

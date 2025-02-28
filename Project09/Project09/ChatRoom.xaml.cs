@@ -75,7 +75,7 @@ namespace Project09
         {
             if (e.SocketError == SocketError.Success)
             {
-                // 접속한 유저 정보 보내기
+                // 접속한 유저 정보 보내기                
                 string json = JsonConvert.SerializeObject(user);
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                 var args = new SocketAsyncEventArgs();
@@ -103,42 +103,46 @@ namespace Project09
                 {
                     // 서버에서 받은 JSON 데이터를 문자열로 변환
                     string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
-                    var receivedData = JsonConvert.DeserializeObject<Chat_Client>(json);
+                    var receivedData = JsonConvert.DeserializeObject<dynamic>(json);                    
+                    
+                    
+                    if (receivedData.Type == "Message") // 문자열 용
+                    {                        
+                        // 문자열 파싱
+                        // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
+                        string[] result = receivedData.Message.Split(",");
 
-                    // 문자열 파싱
-                    // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
-                    string[] result = receivedData.Message.Split(",");
-                    
-                    if (result[0] == "0")
+                        if (result[0] == "0")
+                        {
+                            if (result[1] == "0") // 채팅일 경우
+                            {
+                                // UI 스레드에서 채팅 리스트에 추가
+                                Dispatcher.Invoke(() =>
+                                {
+                                    messageList.Add($"{result[2]} : {result[3]}");
+                                });
+                            }
+                            else if (result[1] == "1") // 0,1 == 온라인 유저 삭제
+                            {
+                                Dispatcher.Invoke(() =>
+                                {
+                                    onlineUserList.Remove(result[2]);
+                                    messageList.Add(result[3]);
+                                });
+                            }
+                        }
+                    }                    
+                    else if (receivedData.Type == "UserList") // 리스트 용
                     {
-                        if (result[1] == "0") // 채팅일 경우
+                        Dispatcher.Invoke(() =>
                         {
-                            // UI 스레드에서 채팅 리스트에 추가
-                            Dispatcher.Invoke(() =>
+                            onlineUserList.Clear();
+                            foreach (var user in receivedData.Users)
                             {
-                                messageList.Add($"{result[2]} : {result[3]}");
-                            });
-                        }
-                        else if (result[1] == "1") // 접속한 유저 정보 보내는 것일 경우
-                        {
-                            // UI 스레드에서 온라인 유저 리스트에 추가
-                            Dispatcher.Invoke(() =>
-                            {
-                                onlineUserList.Add(result[2]);
-                                messageList.Add(result[3]);
-                            });
-                        }
-                        else if (result[1] == "2") 
-                        {
-                            Dispatcher.Invoke(() =>
-                            {
-                                onlineUserList.Remove(result[2]);
-                                messageList.Add(result[3]);
-                            });
-                        }
-                        
+                                onlineUserList.Add(user.ToString());
+                            }
+                        });
                     }
-                    
 
                     // 다시 서버로부터 메시지를 받을 수 있도록 설정
                     ReceiveControl();
@@ -161,6 +165,7 @@ namespace Project09
                 // 1. 전송할 데이터 엔터티 객체에 준비
                 var info = new Chat_Client
                 {
+                    Type = "Message",
                     Message = $"{Room},{RoomNumber},{user.Name},{chatBox.Text}"
                 };
 
