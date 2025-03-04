@@ -46,7 +46,7 @@ namespace Project09
 
 
         // 1. 방 종류, 2. 방 번호, 3. 보낸 사람, 4. 메시지
-        private int Room;
+        private string Room;
         private int RoomNumber;
 
         public ChatRoom(Account account)
@@ -56,8 +56,7 @@ namespace Project09
             messageListView.ItemsSource = messageList;
             onlineList.ItemsSource = onlineUserList;
 
-            // 메시지 형태 초기화
-            Room = 0;
+            Room = "전체";
             RoomNumber = 0;
         }
 
@@ -103,31 +102,29 @@ namespace Project09
                 {
                     // 서버에서 받은 JSON 데이터를 문자열로 변환
                     string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
-                    var receivedData = JsonConvert.DeserializeObject<dynamic>(json);                    
-                    
+                    var receivedData = JsonConvert.DeserializeObject<dynamic>(json);
+
+                    string serverSender = receivedData.Sender.ToString();
+                    string serverMessage = receivedData.Message.ToString();
                     
                     if (receivedData.Type == "Message") // 문자열 용
-                    {                        
-                        // 문자열 파싱
-                        // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
-                        string[] result = receivedData.Message.Split(",");
-
-                        if (result[0] == "0")
+                    {
+                        if (receivedData.Target == "전체")
                         {
-                            if (result[1] == "0") // 채팅일 경우
+                            if (receivedData.Number == 0) // 채팅일 경우
                             {
                                 // UI 스레드에서 채팅 리스트에 추가
                                 Dispatcher.Invoke(() =>
                                 {
-                                    messageList.Add($"{result[2]} : {result[3]}");
+                                    messageList.Add($"{serverSender} : {serverMessage}");
                                 });
                             }
-                            else if (result[1] == "1") // 0,1 == 온라인 유저 삭제
+                            else if (receivedData.Number == 1) // 온라인 유저 삭제
                             {
                                 Dispatcher.Invoke(() =>
                                 {
-                                    onlineUserList.Remove(result[2]);
-                                    messageList.Add(result[3]);
+                                    onlineUserList.Remove(serverSender);
+                                    messageList.Add(serverMessage);
                                 });
                             }
                         }
@@ -166,7 +163,10 @@ namespace Project09
                 var info = new Chat_Client
                 {
                     Type = "Message",
-                    Message = $"{Room},{RoomNumber},{user.Name},{chatBox.Text}"
+                    Target = Room,
+                    Number = RoomNumber,
+                    Sender = user.Name,
+                    Message = chatBox.Text
                 };
 
                 // 2. 객체를 json 문자열로 직렬화
@@ -195,7 +195,7 @@ namespace Project09
             string message = chatBox.Text;
             sendMessage(message);
         }
-
+        
         private void sendMessage(string message)
         {
             if (string.IsNullOrEmpty(message))

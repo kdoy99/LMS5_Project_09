@@ -139,25 +139,25 @@ public partial class MainWindow : Window
                     });
                     SendOnlineUserList(ClientSocket);
                 }
-                else
+                else if (userInfo.ContainsKey(ClientSocket) && e.BytesTransferred > 0)
                 {
                     var userChat = JsonConvert.DeserializeObject<Chat>(json);
 
-                    AddLog($"{userChat.Message}");
+                    AddLog($"{userChat.Target},{userChat.Sender},{userChat.Number},{userChat.Message}");
 
                     // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
                     HandlingMessage(json, userChat);
 
 
-                    // 4. 채팅 데이터베이스에 저장
-                    using (SQLiteConnection connection = new SQLiteConnection(App.databasePath))
-                    {
-                        // Chat 클래스 정의 기반으로 테이블 생성
-                        connection.CreateTable<Chat>();
+                    //// 4. 채팅 데이터베이스에 저장
+                    //using (SQLiteConnection connection = new SQLiteConnection(App.databasePath))
+                    //{
+                    //    // Chat 클래스 정의 기반으로 테이블 생성
+                    //    connection.CreateTable<Chat>();
 
-                        // UI 컨트롤에 입력된 데이터를 chat 객체 형태로 테이블에 삽입
-                        connection.Insert(userChat);
-                    }
+                    //    // UI 컨트롤에 입력된 데이터를 chat 객체 형태로 테이블에 삽입
+                    //    connection.Insert(userChat);
+                    //}
                 }
             }
             catch (Exception ex)
@@ -181,7 +181,10 @@ public partial class MainWindow : Window
                     string jsonUserList = JsonConvert.SerializeObject(new Chat
                     {
                         Type = "Message",
-                        Message = $"{0},{1},{userInfo[ClientSocket].Name},{userInfo[ClientSocket].Name}"
+                        Target = "전체",
+                        Number = 1,
+                        Sender = userInfo[ClientSocket].Name,
+                        Message = $"{userInfo[ClientSocket].Name}님 퇴장"
                     });
                     // byte 변환
                     byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonUserList);
@@ -212,7 +215,7 @@ public partial class MainWindow : Window
         // 다시 json 변환
         string jsonUserList = JsonConvert.SerializeObject(new Chat
         {
-            Type = "UserList",
+            Type = "UserList",            
             Users = userList
         });
         // byte 변환
@@ -226,33 +229,28 @@ public partial class MainWindow : Window
 
     private void HandlingMessage(string json, Chat chat) // 메시지 다루는 메소드
     {
-        // 문자열 파싱
-        // result[0] = 방 종류, result[1] = 방 번호, result[2] = 보낸 사람, result[3] = 메시지
-        // 예외) 0,1,?,? 은 접속한 유저 보내는 메시지임
-        string[] result = chat.Message.Split(","); 
-
         lock (lockObject)
         {
             foreach (var socket in ClientSockets) // foreach 반복문으로 소켓들 준비
             {
                 try
                 {
-                    if (result[0] == "0") // 전체 채팅
-                    {
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes($"{result[2]} : {result[3]}");
-                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-                    }
-                    else if (result[0] == "1")
+                    if (chat.Target == "전체") // 전체 채팅
                     {
                         byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
                     }
-                    else if (result[0] == "2")
+                    else if (chat.Target == "단체")
                     {
                         byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
                     }
-                    else if (result[0] == "3")
+                    else if (chat.Target == "1:1")
+                    {
+                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                    }
+                    else if (chat.Target == "쪽지")
                     {
                         byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);

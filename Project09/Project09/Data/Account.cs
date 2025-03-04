@@ -13,7 +13,7 @@ namespace Project09.Data
         public int UserNumber { get; set; }
         public string ID { get; set; } // 아이디
         public string Password { get; set; } // 비밀번호
-        public string Name { get; set; } // 이름        
+        public string Name { get; set; } // 이름
         public string Contact { get; set; } // 연락처
     }
 }
