@@ -104,6 +104,7 @@ namespace Project09
                     string json = Encoding.UTF8.GetString(e.Buffer, 0, e.BytesTransferred);
                     var receivedData = JsonConvert.DeserializeObject<dynamic>(json);
 
+                    // dynamic 형태로 받은 데이터 string으로 변환
                     string serverSender = receivedData.Sender.ToString();
                     string serverMessage = receivedData.Message.ToString();
                     
