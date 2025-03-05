@@ -47,8 +47,11 @@ namespace Project09
 
             lock (lockObject)
             {
+                userList_create.Add(host.Name);
                 selecetedUserList.Add(host.Name);
             }
+            
+            
             SelectedUserList_create.ItemsSource = selecetedUserList;
 
             
@@ -89,8 +92,8 @@ namespace Project09
                 {
                     MessageBox.Show("채팅방 이름을 정해주세요!!");
                     return;
-                }
-                
+                }                
+
                 string jsonList = JsonConvert.SerializeObject(new Chat_Client
                 {
                     Type = "Create",

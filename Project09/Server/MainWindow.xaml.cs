@@ -76,6 +76,7 @@ public partial class MainWindow : Window
     {
         AddLog("서버 종료");
         ServerSocket.Close();
+        Close();
     }
 
 
@@ -293,7 +294,7 @@ public partial class MainWindow : Window
     {
         // 딕셔너리에 채팅방 이름, 초대된 유저 추가
         lock (lockObject)
-        {
+        {            
             chatRoom.Add(chat.RoomTitle, chat.Users);
         }
         AddLog(chat.Message);
@@ -311,9 +312,11 @@ public partial class MainWindow : Window
                 foreach (var roomuser in chat.Users)
                 {
                     try
-                    {
-                        if (string.Equals(userInfo[socket], roomuser))
+                    {                        
+                        if (string.Equals(userInfo[socket].Name, roomuser))
                         {
+                            AddLog($"{roomuser} 님 {chat.RoomTitle} 채팅방에 초대 완료");
+
                             byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                             socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
                         }
