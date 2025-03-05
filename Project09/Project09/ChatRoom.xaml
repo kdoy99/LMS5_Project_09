@@ -34,9 +34,7 @@
 
         <Grid Grid.Row="1" Grid.Column="2" Margin="10,10,10,10"/>
 
-        <Grid Grid.Row="1" Grid.Column="4" Margin="10,10,10,10">
-            <Button Content="회원정보" FontSize="36" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" Background="#FFCE55"/>
-        </Grid>
+        <Grid Grid.Row="1" Grid.Column="4" Margin="10,10,10,10"/>
 
         <Grid Grid.Row="1" Grid.Column="5" Grid.ColumnSpan="2" Margin="10,10,10,10">
             <Button x:Name="LogOutButton" Content="로그아웃" FontSize="36" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" Background="#FFCE55" Click="LogOutButton_Click" />
