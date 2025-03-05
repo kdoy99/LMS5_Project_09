@@ -51,15 +51,15 @@
         </Grid>
 
         <Grid Grid.Row="3" Grid.Column="1" Margin="10,0,0,0">
-            <Label Content="전체 유저 목록" FontSize="30" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" VerticalAlignment="Bottom" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+            <Label Content="채팅방 목록" FontSize="30" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" VerticalAlignment="Bottom" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
         </Grid>
 
-        <Grid Grid.Row="3" Grid.Column="3" Margin="10,0,0,0">
-            <Label Content="유저 정보" FontSize="30" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" VerticalAlignment="Bottom" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+        <Grid Grid.Row="3" Grid.Column="3" Grid.ColumnSpan="2" Margin="10,0,0,0">
+            <Label Content="채팅방별 유저 리스트" FontSize="30" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" VerticalAlignment="Bottom" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
         </Grid>
 
         <Grid Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="10,10,10,10">
-            <ListView x:Name="TotalList" d:ItemsSource="{d:SampleData ItemCount=5}">
+            <ListView x:Name="ChatRoomList" d:ItemsSource="{d:SampleData ItemCount=5}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn/>
@@ -69,7 +69,7 @@
         </Grid>
 
         <Grid Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="4" Margin="10,10,10,10">
-            <ListBox x:Name="UserInfo" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+            <ListBox x:Name="ChatRoomUserList" d:ItemsSource="{d:SampleData ItemCount=5}"/>
         </Grid>
 
         <Grid Grid.Row="5" Grid.Column="3" Margin="10,10,10,10">

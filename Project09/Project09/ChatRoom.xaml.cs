@@ -227,5 +227,11 @@ namespace Project09
                 sendMessage(message);
             }
         }
+
+        private void createChatRoom_Click(object sender, RoutedEventArgs e)
+        {
+            CreateRoom createRoom = new CreateRoom(onlineUserList, ClientSocket, user);
+            createRoom.ShowDialog();
+        }
     }
 }

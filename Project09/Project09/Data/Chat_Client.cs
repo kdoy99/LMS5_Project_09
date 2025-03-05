@@ -15,5 +15,7 @@ namespace Project09.Data
         public string Message { get; set; } // 보낸 메시지 내용
 
         public List<string> Users { get; set; } // 접속한 유저 명단
+        
+        public string RoomTitle { get; set; } // 채팅방 이름
     }
 }

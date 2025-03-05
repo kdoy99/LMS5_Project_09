@@ -26,13 +26,27 @@ namespace Server;
 /// </summary>
 public partial class MainWindow : Window
 {
-    Socket ServerSocket; // 서버 소켓, 하나
-    List<Socket> ClientSockets = new List<Socket>(); // 클라이언트 소켓, 리스트
-    Dictionary<Socket, Account> userInfo = new Dictionary<Socket, Account>(); // 각 소켓별 접속한 유저 정보 딕셔너리
+    // 서버 소켓, 하나
+    Socket ServerSocket;
 
-    private ObservableCollection<string> onlineUserList = new ObservableCollection<string>(); // 온라인 유저 정보 리스트
+    // 클라이언트 소켓, 리스트
+    List<Socket> ClientSockets = new List<Socket>();
 
-    object lockObject = new object(); // 멀티스레드 동기화용
+    // 각 소켓별 접속한 유저 정보 딕셔너리
+    Dictionary<Socket, Account> userInfo = new Dictionary<Socket, Account>();
+
+    // 온라인 유저 정보 리스트
+    private ObservableCollection<string> onlineUserList = new ObservableCollection<string>();
+
+    // 채팅방 유저 정보 딕셔너리 (채팅방 이름, 유저 이름)
+    List<string> chatRoomUser = new List<string>(); // 딕셔너리 밸류에 쓸 리스트 (유저)
+    Dictionary<string, List> chatRoom = new Dictionary<string, List>();
+
+    // 존재하는 채팅방 목록
+    private ObservableCollection<string> chatRoomList = new ObservableCollection<string>();
+
+    // 멀티스레드 동기화용
+    object lockObject = new object();
 
     // 채팅방 목록
 
@@ -41,6 +55,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         OnlineList.ItemsSource = onlineUserList; // 접속중인 유저 리스트
+        ChatRoomList.ItemsSource = chatRoomList; // 존재하는 채팅방 리스트
     }
 
     private void openServerButton_Click(object sender, RoutedEventArgs e)
@@ -140,13 +155,21 @@ public partial class MainWindow : Window
                     SendOnlineUserList(ClientSocket);
                 }
                 else if (userInfo.ContainsKey(ClientSocket) && e.BytesTransferred > 0)
-                {
+                {                    
                     var userChat = JsonConvert.DeserializeObject<Chat>(json);
-
+                    // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
                     AddLog($"{userChat.Target},{userChat.Sender},{userChat.Number},{userChat.Message}");
 
-                    // 3. 객체의 내용을 UI에 반영, 클라이언트에 다시 보내기
-                    HandlingMessage(json, userChat);
+                    if (userChat.Type == "Message")
+                    {
+                        HandlingMessage(json, userChat);
+                    }
+                    else if (userChat.Type == "Create")
+                    {
+                        CreateChatRoom(json, userChat);
+                    }
+                    
+                    
 
 
                     //// 4. 채팅 데이터베이스에 저장
@@ -271,6 +294,23 @@ public partial class MainWindow : Window
                 }
             }
         }
+    }
+
+    private void CreateChatRoom(string json, Chat chat)
+    {
+        // 딕셔너리에 채팅방 이름, 초대된 유저 추가
+        lock (lockObject)
+        {
+            chatRoom.Add(chat.RoomTitle, chat.Users[]);
+        }
+        AddLog($"{chat.Sender} 님이 {chat.RoomTitle} 채팅방을 개설하셨습니다.");
+        // 채팅방 목록에 채팅방 이름 추가
+        Dispatcher.Invoke(() =>
+        {
+            chatRoomList.Clear();
+            chatRoomList.Add(chat.RoomTitle);
+        });
+        
     }
 
     private void AddLog(string log)
