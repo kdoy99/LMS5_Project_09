@@ -40,15 +40,18 @@ public partial class MainWindow : Window
 
     // 채팅방 유저 정보 딕셔너리 (채팅방 이름, 유저 이름)
     List<string> chatRoomUser = new List<string>(); // 딕셔너리 밸류에 쓸 리스트 (유저)
-    Dictionary<string, List> chatRoom = new Dictionary<string, List>();
+    Dictionary<string, List<string>> chatRoom = new Dictionary<string, List<string>>();
 
     // 존재하는 채팅방 목록
     private ObservableCollection<string> chatRoomList = new ObservableCollection<string>();
 
+    // 채팅방 별 유저 목록
+    private ObservableCollection<string> chatRoomUserList = new ObservableCollection<string>();
+
     // 멀티스레드 동기화용
     object lockObject = new object();
 
-    // 채팅방 목록
+    
 
 
     public MainWindow()
@@ -56,6 +59,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         OnlineList.ItemsSource = onlineUserList; // 접속중인 유저 리스트
         ChatRoomList.ItemsSource = chatRoomList; // 존재하는 채팅방 리스트
+        ChatRoomUserList.ItemsSource = chatRoomUserList; // 채팅방 별 유저 리스트
     }
 
     private void openServerButton_Click(object sender, RoutedEventArgs e)
@@ -263,22 +267,11 @@ public partial class MainWindow : Window
                         byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
                     }
-                    else if (chat.Target == "단체")
+                    else // 그 외 채팅방
                     {
                         byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
                         socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-                    }
-                    else if (chat.Target == "1:1")
-                    {
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-                    }
-                    else if (chat.Target == "쪽지")
-                    {
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
-                    }
-                    else { return; }
+                    }                    
                      
                     // 소켓 모두에 메시지 보냄
                     
@@ -301,16 +294,68 @@ public partial class MainWindow : Window
         // 딕셔너리에 채팅방 이름, 초대된 유저 추가
         lock (lockObject)
         {
-            chatRoom.Add(chat.RoomTitle, chat.Users[]);
+            chatRoom.Add(chat.RoomTitle, chat.Users);
         }
-        AddLog($"{chat.Sender} 님이 {chat.RoomTitle} 채팅방을 개설하셨습니다.");
+        AddLog(chat.Message);
         // 채팅방 목록에 채팅방 이름 추가
         Dispatcher.Invoke(() =>
         {
             chatRoomList.Clear();
             chatRoomList.Add(chat.RoomTitle);
         });
-        
+
+        lock (lockObject)
+        {
+            foreach (var socket in ClientSockets)
+            {
+                foreach (var roomuser in chat.Users)
+                {
+                    try
+                    {
+                        if (string.Equals(userInfo[socket], roomuser))
+                        {
+                            byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                            socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"초대 메시지 보내는 중 오류 발생! {ex.Message}");
+                    }
+                }
+            }            
+        }
+    }
+
+    private void ChatRoomList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        // 마우스 이벤트가 발생한 곳에 OriginalSource를 사용
+        DependencyObject dep = (DependencyObject)e.OriginalSource;
+
+        while ((dep != null) && !(dep is ListViewItem))
+        {
+            // 더블 클릭한 대상중 ListViewItem이 있을 때까지
+            dep = VisualTreeHelper.GetParent(dep);
+        }
+
+        if (dep == null)
+            return;
+
+        Dispatcher.Invoke(() =>
+        {
+            chatRoomUserList.Clear();
+            
+            if (ChatRoomList.SelectedItem is string selecetedRoom)
+            {
+                if (chatRoom.TryGetValue(selecetedRoom, out List<string> users))
+                {
+                    foreach (var user in users)
+                    {
+                        chatRoomUserList.Add(user);
+                    }
+                }
+            }            
+        });
     }
 
     private void AddLog(string log)
@@ -323,5 +368,5 @@ public partial class MainWindow : Window
         });
     }
 
-
+    
 }

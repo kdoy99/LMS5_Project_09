@@ -59,7 +59,7 @@
         </Grid>
 
         <Grid Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="10,10,10,10">
-            <ListView x:Name="ChatRoomList" d:ItemsSource="{d:SampleData ItemCount=5}">
+            <ListView x:Name="ChatRoomList" d:ItemsSource="{d:SampleData ItemCount=5}" MouseDoubleClick="ChatRoomList_MouseDoubleClick">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn/>

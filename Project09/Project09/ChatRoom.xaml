@@ -88,7 +88,7 @@
 
         <Grid Grid.Row="6" Grid.Column="3" Grid.ColumnSpan="3" >
             <ComboBox x:Name="chatSelect" Margin="10,10,400,10" FontSize="20" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
-                <ComboBoxItem Selector.IsSelected="True">전체 채팅</ComboBoxItem>
+                <ComboBoxItem Selector.IsSelected="True">전체</ComboBoxItem>
             </ComboBox>
 
             <TextBox x:Name="chatBox" Margin="200,10,10,10" TextWrapping="Wrap" FontSize="36" FontWeight="Bold" FontFamily="Hancom Hoonminjeongeum_H" VerticalContentAlignment="Center" PreviewKeyDown="chatBox_PreviewKeyDown"/>

@@ -85,11 +85,18 @@ namespace Project09
         {
             try
             {
+                if (chatTitle.Text.Length == 0)
+                {
+                    MessageBox.Show("채팅방 이름을 정해주세요!!");
+                    return;
+                }
+                
                 string jsonList = JsonConvert.SerializeObject(new Chat_Client
                 {
                     Type = "Create",
                     Sender = host.Name,
                     Users = userList_create,
+                    Message = $"{host.Name} 님이 {chatTitle.Text} 채팅방을 개설하셨습니다.",
                     RoomTitle = chatTitle.Text
                 });
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(jsonList);

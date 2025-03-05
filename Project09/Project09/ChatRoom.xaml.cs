@@ -45,7 +45,7 @@ namespace Project09
         private int port = 10000;
 
 
-        // 1. 방 종류, 2. 방 번호, 3. 보낸 사람, 4. 메시지
+        // 1. 방 종류, 2. 방 상호작용 종류
         private string Room;
         private int RoomNumber;
 
@@ -56,7 +56,7 @@ namespace Project09
             messageListView.ItemsSource = messageList;
             onlineList.ItemsSource = onlineUserList;
 
-            Room = "전체";
+            Room = chatSelect.Text;
             RoomNumber = 0;
         }
 
@@ -129,6 +129,10 @@ namespace Project09
                                 });
                             }
                         }
+                        else // 그 외 채팅방
+                        {
+
+                        }
                     }                    
                     else if (receivedData.Type == "UserList") // 리스트 용
                     {
@@ -139,6 +143,14 @@ namespace Project09
                             {
                                 onlineUserList.Add(user.ToString());
                             }
+                        });
+                    }
+                    else if (receivedData.Type == "Create")
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            // string으로 명확히 형변환 안 해도 되는지?
+                            chatSelect.Items.Add(receivedData.RoomTitle);
                         });
                     }
 
