@@ -18,6 +18,7 @@ using System.Collections;
 using System;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using Newtonsoft.Json.Linq;
 
 namespace Server;
 
@@ -50,10 +51,7 @@ public partial class MainWindow : Window
 
     // 멀티스레드 동기화용
     object lockObject = new object();
-
     
-
-
     public MainWindow()
     {
         InitializeComponent();
@@ -174,8 +172,6 @@ public partial class MainWindow : Window
                         CreateChatRoom(json, userChat);
                     }
                     
-                    
-
 
                     //// 4. 채팅 데이터베이스에 저장
                     //using (SQLiteConnection connection = new SQLiteConnection(App.databasePath))
@@ -270,12 +266,15 @@ public partial class MainWindow : Window
                     }
                     else // 그 외 채팅방
                     {
-                        byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-                        socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                        foreach (var roomname in chatRoom[chat.Target]) // 현재 채팅방 목록에서 검사
+                        {
+                            if (string.Equals(userInfo[socket].Name, roomname))
+                            {
+                                byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
+                                socket.SendAsync(new ArraySegment<byte>(bytesToSend), SocketFlags.None);
+                            }
+                        }
                     }                    
-                     
-                    // 소켓 모두에 메시지 보냄
-                    
                 }
                 catch // 메시지 안 보내지면 문제 발생한 걸로 간주하고 소켓 닫음
                 {
@@ -312,7 +311,7 @@ public partial class MainWindow : Window
                 foreach (var roomuser in chat.Users)
                 {
                     try
-                    {                        
+                    {
                         if (string.Equals(userInfo[socket].Name, roomuser))
                         {
                             AddLog($"{roomuser} 님 {chat.RoomTitle} 채팅방에 초대 완료");
@@ -323,11 +322,11 @@ public partial class MainWindow : Window
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"초대 메시지 보내는 중 오류 발생! {ex.Message}"); 
+                        MessageBox.Show($"초대 메시지 보내는 중 오류 발생! {ex.Message}");
                     }
                 }
-            }            
-        }
+            }
+        }        
     }
 
     private void ChatRoomList_MouseDoubleClick(object sender, MouseButtonEventArgs e)

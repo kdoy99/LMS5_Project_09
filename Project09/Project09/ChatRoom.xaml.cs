@@ -40,6 +40,9 @@ namespace Project09
         // 온라인 유저 리스트
         private ObservableCollection<string> onlineUserList = new ObservableCollection<string>();
 
+        // 현재 존재하는 채팅방 리스트
+        private ObservableCollection<string> chatRoomList = new ObservableCollection<string>();
+
         // IP, port 값
         private string IP = "127.0.0.1";
         private int port = 10000;
@@ -53,9 +56,13 @@ namespace Project09
         {
             InitializeComponent();
             user = account;
+
+            // 리스트 실시간 갱신
             messageListView.ItemsSource = messageList;
             onlineList.ItemsSource = onlineUserList;
+            ChatRoomList.ItemsSource = chatRoomList;
 
+            NameLabel.Content = "현재 유저 : " + account.Name;
             Room = chatSelect.Text;
             RoomNumber = 0;
         }
@@ -107,6 +114,7 @@ namespace Project09
                     // dynamic 형태로 받은 데이터 string으로 변환
                     string serverSender = receivedData.Sender.ToString();
                     string serverMessage = receivedData.Message.ToString();
+                    string serverRoomTitle = receivedData.RoomTitle.ToString();
                     
                     if (receivedData.Type == "Message") // 문자열 용
                     {
@@ -117,7 +125,7 @@ namespace Project09
                                 // UI 스레드에서 채팅 리스트에 추가
                                 Dispatcher.Invoke(() =>
                                 {
-                                    messageList.Add($"{serverSender} : {serverMessage}");
+                                    messageList.Add($"({receivedData.Target}) {serverSender} : {serverMessage}");
                                 });
                             }
                             else if (receivedData.Number == 1) // 온라인 유저 삭제
@@ -131,7 +139,10 @@ namespace Project09
                         }
                         else // 그 외 채팅방
                         {
-
+                            Dispatcher.Invoke(() =>
+                            {
+                                messageList.Add($"({receivedData.Target}) {serverSender} : {serverMessage}");
+                            });
                         }
                     }                    
                     else if (receivedData.Type == "UserList") // 리스트 용
@@ -149,10 +160,11 @@ namespace Project09
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            // string으로 명확히 형변환 안 해도 되는지?
                             chatSelect.Items.Add(receivedData.RoomTitle);
-                        });
-                    }
+                            messageList.Add(serverMessage);
+                            chatRoomList.Add(serverRoomTitle);
+                        });                        
+                    }                    
 
                     // 다시 서버로부터 메시지를 받을 수 있도록 설정
                     ReceiveControl();
@@ -176,7 +188,7 @@ namespace Project09
                 var info = new Chat_Client
                 {
                     Type = "Message",
-                    Target = Room,
+                    Target = chatSelect.Text,
                     Number = RoomNumber,
                     Sender = user.Name,
                     Message = chatBox.Text
@@ -244,6 +256,14 @@ namespace Project09
         {
             CreateRoom createRoom = new CreateRoom(onlineUserList, ClientSocket, user);
             createRoom.ShowDialog();
-        }
+        }        
+
+        private void LogOutButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow mainWindow = new MainWindow();
+            ClientSocket.Close();
+            Close();
+            mainWindow.ShowDialog();
+        }        
     }
 }
