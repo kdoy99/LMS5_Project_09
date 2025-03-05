@@ -323,7 +323,7 @@ public partial class MainWindow : Window
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"초대 메시지 보내는 중 오류 발생! {ex.Message}");
+                        MessageBox.Show($"초대 메시지 보내는 중 오류 발생! {ex.Message}"); 
                     }
                 }
             }            
